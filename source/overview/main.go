@@ -13,7 +13,7 @@ import (
 	"text/template"
 )
 
-type LoanApplication struct {
+type MicroserviceStatus struct {
 	AppVersion     string
 	BackendVersion string
 	BackendHost    string
@@ -29,26 +29,26 @@ func main() {
 		port = "8080"
 	}
 
-	loanApp := LoanApplication{}
+	microserviceStatus := MicroserviceStatus{}
 
-	loanApp.AppVersion = os.Getenv("APP_VERSION")
-	if len(loanApp.AppVersion) == 0 {
-		loanApp.AppVersion = "dev"
+	microserviceStatus.AppVersion = os.Getenv("APP_VERSION")
+	if len(microserviceStatus.AppVersion) == 0 {
+		microserviceStatus.AppVersion = "dev"
 	}
 
-	loanApp.BackendHost = os.Getenv("BACKEND_HOST")
-	if len(loanApp.BackendHost) == 0 {
-		loanApp.BackendHost = "interest"
+	microserviceStatus.BackendHost = os.Getenv("BACKEND_HOST")
+	if len(microserviceStatus.BackendHost) == 0 {
+		microserviceStatus.BackendHost = "interest"
 	}
 
-	loanApp.BackendPort = os.Getenv("BACKEND_PORT")
-	if len(loanApp.BackendPort) == 0 {
-		loanApp.BackendPort = "8080"
+	microserviceStatus.BackendPort = os.Getenv("BACKEND_PORT")
+	if len(microserviceStatus.BackendPort) == 0 {
+		microserviceStatus.BackendPort = "8080"
 	}
 
 	// Allow anybody to retrieve version
 	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintln(w, loanApp.AppVersion)
+		fmt.Fprintln(w, microserviceStatus.AppVersion)
 	})
 
 	// Kubernetes check if app is ok
@@ -61,21 +61,21 @@ func main() {
 		fmt.Fprintln(w, "yes")
 	})
 
-	http.HandleFunc("/", loanApp.serveFiles)
+	http.HandleFunc("/", microserviceStatus.serveFiles)
 
-	fmt.Printf("Frontend version %s is listening now at port %s\n", loanApp.AppVersion, port)
+	fmt.Printf("Frontend version %s is listening now at port %s\n", microserviceStatus.AppVersion, port)
 	err := http.ListenAndServe(":"+port, nil)
 	log.Fatal(err)
 }
 
-func (loanApp *LoanApplication) serveFiles(w http.ResponseWriter, r *http.Request) {
+func (microserviceStatus *MicroserviceStatus) serveFiles(w http.ResponseWriter, r *http.Request) {
 	upath := r.URL.Path
 	p := "." + upath
 	if p == "./" {
-		loanApp.home(w, r)
+		microserviceStatus.home(w, r)
 		return
 	} else if p == "./diagram.svg" {
-		loanApp.renderLiveDiagram(w, r)
+		microserviceStatus.renderLiveDiagram(w, r)
 		return
 	} else {
 		p = filepath.Join("./static/", path.Clean(upath))
@@ -83,19 +83,19 @@ func (loanApp *LoanApplication) serveFiles(w http.ResponseWriter, r *http.Reques
 	http.ServeFile(w, r, p)
 }
 
-func (loanApp *LoanApplication) findBackendVersion() {
-	version, err := loanApp.callBackend("version")
+func (microserviceStatus *MicroserviceStatus) findBackendVersion() {
+	version, err := microserviceStatus.callBackend("version")
 	if err != nil {
 		log.Println("Interest error :", err)
 		version = "unknown"
 	}
 
-	loanApp.BackendVersion = version
+	microserviceStatus.BackendVersion = version
 }
 
-func (loanApp *LoanApplication) home(w http.ResponseWriter, r *http.Request) {
+func (microserviceStatus *MicroserviceStatus) home(w http.ResponseWriter, r *http.Request) {
 
-	loanApp.findBackendVersion()
+	microserviceStatus.findBackendVersion()
 
 	t, err := template.ParseFiles("./static/index.html")
 	if err != nil {
@@ -103,7 +103,7 @@ func (loanApp *LoanApplication) home(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error parsing template: %v", err)
 		return
 	}
-	err = t.Execute(w, loanApp)
+	err = t.Execute(w, microserviceStatus)
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		log.Printf("Error executing template: %v", err)
@@ -111,40 +111,11 @@ func (loanApp *LoanApplication) home(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (loanApp *LoanApplication) showDiagram(w http.ResponseWriter, r *http.Request) {
-
-	t, err := template.ParseFiles("./static/diagram.svg")
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		log.Printf("Error parsing template: %v", err)
-		return
-	}
-
-	type versions struct {
-		FV string
-		BV string
-	}
-
-	versionsFound := versions{}
-	versionsFound.FV = loanApp.AppVersion
-	versionsFound.BV = loanApp.BackendVersion
-
-	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Header().Set("Accept-Ranges", "bytes")
-
-	err = t.Execute(w, versionsFound)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		log.Printf("Error executing template: %v", err)
-		return
-	}
-}
-
-func (loanApp *LoanApplication) callBackend(path string) (result string, err error) {
+func (microserviceStatus *MicroserviceStatus) callBackend(path string) (result string, err error) {
 
 	backendUrl := url.URL{
 		Scheme: "http",
-		Host:   loanApp.BackendHost + ":" + loanApp.BackendPort,
+		Host:   microserviceStatus.BackendHost + ":" + microserviceStatus.BackendPort,
 		Path:   path,
 	}
 
