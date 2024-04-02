@@ -27,11 +27,26 @@ type queueGFX struct {
 	color       string
 	name        string
 	description string
+	x           int
+	y           int
+}
+
+type sceneGFX struct {
+	microserviceStatus *MicroserviceStatus
+	canvas             *svg.SVG
+	queueStable        queueGFX
+	queuePreview       queueGFX
 }
 
 func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "image/svg+xml")
+
+	scene := sceneGFX{}
 	s := svg.New(w)
+
+	scene.canvas = s
+	scene.prepareScene(microserviceStatus)
+
 	s.Start(sceneWidth, sceneHeight)
 	s.Circle(600, 600, 125, `fill:none;stroke:black`, `id="circle"`)
 	s.Animate("#circle", "opacity", 0, 1, 3, 15)
@@ -42,19 +57,8 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 
 	s.Rect(500, 30, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="workerActive"`)
 
-	// s.Ellipse(900, 220, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-	// s.Ellipse(900, 200, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-	// s.Ellipse(900, 180, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-	// s.Ellipse(900, 160, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-	// s.Ellipse(900, 140, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-	// s.Ellipse(900, 120, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-	// s.Ellipse(900, 100, queueDiskWidth, queueDiskHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
-
-	q := queueGFX{}
-	q.color = "orange"
-	q.name = "production"
-	q.description = "RabbitMQ"
-	microserviceStatus.renderQueue(s, q)
+	scene.renderQueue(scene.queueStable)
+	scene.renderQueue(scene.queuePreview)
 
 	s.Line(250, 240, 280, 250, `stroke-width:3;stroke:black`)
 	s.Line(220, 250, 280, 250, `stroke-width:3;stroke:black`)
@@ -67,9 +71,30 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	s.End()
 }
 
-func (microserviceStatus *MicroserviceStatus) renderQueue(canvas *svg.SVG, queue queueGFX) {
-	x := 900
-	y := 100
+func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
+	scene.microserviceStatus = microserviceStatus
+
+	queueStable := queueGFX{}
+	queueStable.color = "red"
+	queueStable.name = "production"
+	queueStable.description = "RabbitMQ"
+	//Just some starting values on the right of the diagram
+	queueStable.x = 900
+	queueStable.y = 100
+	scene.queueStable = queueStable
+
+	queuePreview := queueGFX{}
+	queuePreview.color = "orange"
+	queuePreview.name = "preview"
+	queuePreview.description = "RabbitMQ"
+	queuePreview.x = 900
+	queuePreview.y = 500
+	scene.queuePreview = queuePreview
+}
+
+func (scene *sceneGFX) renderQueue(queue queueGFX) {
+	x := queue.x
+	y := queue.y
 
 	fontSize := 26
 	svgTextOptions := fmt.Sprintf("font-size:%dpx;fill:black", fontSize)
@@ -77,14 +102,14 @@ func (microserviceStatus *MicroserviceStatus) renderQueue(canvas *svg.SVG, queue
 
 	startingY := y + (diskSpacing * numberOfDisks)
 	for i := 0; i < numberOfDisks; i++ {
-		canvas.Ellipse(x, startingY, queueDiskWidth, queueDiskHeight, svgDiskOptions, `id="frontendPreview"`)
+		scene.canvas.Ellipse(x, startingY, queueDiskWidth, queueDiskHeight, svgDiskOptions, `id="frontendPreview"`)
 		startingY = startingY - diskSpacing
 	}
 
 	//Description on top of the disks
-	canvas.Text(x-queueDiskWidth, y-margin, queue.description, svgTextOptions)
+	scene.canvas.Text(x-queueDiskWidth, y-margin, queue.description, svgTextOptions)
 
 	//queue name is to the right of the disks
-	canvas.Text(x+queueDiskWidth+margin, y+(diskSpacing*numberOfDisks/2), queue.name, svgTextOptions)
+	scene.canvas.Text(x+queueDiskWidth+margin, y+(diskSpacing*numberOfDisks/2), queue.name, svgTextOptions)
 
 }
