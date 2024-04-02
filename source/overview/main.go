@@ -10,7 +10,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strconv"
 	"text/template"
 )
 
@@ -64,8 +63,6 @@ func main() {
 
 	http.HandleFunc("/", loanApp.serveFiles)
 
-	http.Handle("/circle", http.HandlerFunc(circle))
-
 	fmt.Printf("Frontend version %s is listening now at port %s\n", loanApp.AppVersion, port)
 	err := http.ListenAndServe(":"+port, nil)
 	log.Fatal(err)
@@ -78,7 +75,7 @@ func (loanApp *LoanApplication) serveFiles(w http.ResponseWriter, r *http.Reques
 		loanApp.home(w, r)
 		return
 	} else if p == "./diagram.svg" {
-		circle(w, r)
+		loanApp.renderLiveDiagram(w, r)
 		return
 	} else {
 		p = filepath.Join("./static/", path.Clean(upath))
@@ -99,7 +96,6 @@ func (loanApp *LoanApplication) findBackendVersion() {
 func (loanApp *LoanApplication) home(w http.ResponseWriter, r *http.Request) {
 
 	loanApp.findBackendVersion()
-	loanApp.handleFormSubmission(w, r)
 
 	t, err := template.ParseFiles("./static/index.html")
 	if err != nil {
@@ -142,54 +138,6 @@ func (loanApp *LoanApplication) showDiagram(w http.ResponseWriter, r *http.Reque
 		log.Printf("Error executing template: %v", err)
 		return
 	}
-}
-
-func (loanApp *LoanApplication) handleFormSubmission(w http.ResponseWriter, r *http.Request) {
-	loanAmount := parseLoanAmount(r)
-	loanApp.LoanAmount = loanAmount
-	if loanAmount == 0 {
-		return
-	}
-
-	quote := ""
-	interestFound, err := loanApp.callBackend("api/v1/interest")
-	if err != nil {
-		log.Println("Interest error :", err)
-		quote = "Could not get interest. Sorry!"
-	} else {
-		log.Println("Found interest rate " + interestFound)
-		interestConverted, _ := strconv.Atoi(interestFound)
-		quote = offerQuote(loanAmount, interestConverted)
-	}
-	loanApp.LoanResult = quote
-
-}
-
-func parseLoanAmount(r *http.Request) int {
-
-	err := r.ParseForm() // Parses the request body
-	if err != nil {
-		return 0
-	}
-
-	loanPostParameter := r.Form.Get("loan") // x will be "" if parameter is not set
-
-	loanAmount, err := strconv.Atoi(loanPostParameter)
-	if err != nil {
-		return 0
-	}
-	return loanAmount
-
-}
-
-func offerQuote(loan int, interest int) string {
-	if loan <= 0 {
-		return ""
-	}
-
-	total := loan * interest / 100
-	return fmt.Sprintf("With rate %d%% you will pay  %d extra interest", interest, total)
-
 }
 
 func (loanApp *LoanApplication) callBackend(path string) (result string, err error) {

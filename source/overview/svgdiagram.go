@@ -6,7 +6,7 @@ import (
 	svg "github.com/ajstarks/svgo"
 )
 
-func circle(w http.ResponseWriter, req *http.Request) {
+func (loanApp *LoanApplication) renderLiveDiagram(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Content-Type", "image/svg+xml")
 	s := svg.New(w)
 	s.Start(1200, 800)
