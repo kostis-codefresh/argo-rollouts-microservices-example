@@ -48,7 +48,7 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	scene.prepareScene(microserviceStatus)
 
 	s.Start(sceneWidth, sceneHeight)
-	s.Circle(600, 600, 125, `fill:none;stroke:black`, `id="circle"`)
+	s.Circle(600, 400, 50, `fill:none;stroke:black`, `id="circle"`)
 	s.Animate("#circle", "opacity", 0, 1, 3, 15)
 
 	s.Rect(10, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendActive"`)
@@ -74,6 +74,7 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	scene.microserviceStatus = microserviceStatus
 
+	//Production Queue
 	queueStable := queueGFX{}
 	queueStable.color = "red"
 	queueStable.name = "production"
@@ -83,10 +84,12 @@ func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	queueStable.y = 100
 	scene.queueStable = queueStable
 
+	//Preview Queue
 	queuePreview := queueGFX{}
 	queuePreview.color = "orange"
 	queuePreview.name = "preview"
 	queuePreview.description = "RabbitMQ"
+	//Mirrored downwards from stable version
 	queuePreview.x = 900
 	queuePreview.y = 500
 	scene.queuePreview = queuePreview
