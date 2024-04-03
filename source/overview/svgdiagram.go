@@ -74,9 +74,12 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	scene.renderMicroservice(scene.backendStable)
 	scene.renderMicroservice(scene.backendPreview)
 
+	scene.renderMicroservice(scene.workerStable)
+	scene.renderMicroservice(scene.workerPreview)
+
 	// s.Rect(300, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
 
-	s.Rect(500, 30, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="workerActive"`)
+	// s.Rect(500, 30, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="workerActive"`)
 
 	scene.renderQueue(scene.queueStable)
 	scene.renderQueue(scene.queuePreview)
@@ -87,7 +90,7 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 
 	// s.Text(10, 200, "Front-end", "font-size:30px;fill:black")
 	// s.Text(300, 200, "Back-end", "font-size:30px;fill:black")
-	s.Text(500, 30, "Worker", "font-size:30px;fill:black")
+	// s.Text(500, 30, "Worker", "font-size:30px;fill:black")
 
 	s.End()
 }
@@ -110,7 +113,7 @@ func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	frontendPreview.name = "Frontend"
 	frontendPreview.version = "2.0"
 	frontendPreview.x = 10
-	frontendPreview.y = 600
+	frontendPreview.y = 400
 	scene.frontendPreview = frontendPreview
 
 	//Production backend
@@ -128,8 +131,26 @@ func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	backendPreview.name = "Backend"
 	backendPreview.version = "2.0"
 	backendPreview.x = 300
-	backendPreview.y = 600
+	backendPreview.y = 400
 	scene.backendPreview = backendPreview
+
+	//Production worked
+	workerStable := microserviceGFX{}
+	workerStable.color = "blue"
+	workerStable.name = "Worker"
+	workerStable.version = "1.0"
+	workerStable.x = 500
+	workerStable.y = 30
+	scene.workerStable = workerStable
+
+	//Preview worker
+	workerPreview := microserviceGFX{}
+	workerPreview.color = "green"
+	workerPreview.name = "Worker"
+	workerPreview.version = "2.0"
+	workerPreview.x = 500
+	workerPreview.y = 600
+	scene.workerPreview = workerPreview
 
 	//Production Queue
 	queueStable := queueGFX{}
@@ -148,7 +169,7 @@ func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	queuePreview.description = "RabbitMQ"
 	//Mirrored downwards from stable version
 	queuePreview.x = 900
-	queuePreview.y = 500
+	queuePreview.y = 400
 	scene.queuePreview = queuePreview
 }
 
