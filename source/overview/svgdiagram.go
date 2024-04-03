@@ -31,11 +31,27 @@ type queueGFX struct {
 	y           int
 }
 
+type microserviceGFX struct {
+	color   string
+	version string
+	name    string
+	x       int
+	y       int
+}
+
 type sceneGFX struct {
 	microserviceStatus *MicroserviceStatus
 	canvas             *svg.SVG
-	queueStable        queueGFX
-	queuePreview       queueGFX
+
+	frontendStable  microserviceGFX
+	frontendPreview microserviceGFX
+	backendStable   microserviceGFX
+	backendPreview  microserviceGFX
+	workerStable    microserviceGFX
+	workerPreview   microserviceGFX
+
+	queueStable  queueGFX
+	queuePreview queueGFX
 }
 
 func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseWriter, req *http.Request) {
@@ -51,7 +67,9 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	s.Circle(600, 400, 50, `fill:none;stroke:black`, `id="circle"`)
 	s.Animate("#circle", "opacity", 0, 1, 3, 15)
 
-	s.Rect(10, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendActive"`)
+	// s.Rect(10, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendActive"`)
+	scene.renderMicroservice(scene.frontendStable)
+	scene.renderMicroservice(scene.frontendPreview)
 
 	s.Rect(300, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
 
@@ -64,7 +82,7 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	s.Line(220, 250, 280, 250, `stroke-width:3;stroke:black`)
 	s.Line(250, 260, 280, 250, `stroke-width:3;stroke:black`)
 
-	s.Text(10, 200, "Front-end", "font-size:30px;fill:black")
+	// s.Text(10, 200, "Front-end", "font-size:30px;fill:black")
 	s.Text(300, 200, "Back-end", "font-size:30px;fill:black")
 	s.Text(500, 30, "Worker", "font-size:30px;fill:black")
 
@@ -73,6 +91,24 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 
 func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	scene.microserviceStatus = microserviceStatus
+
+	//Production frontend
+	frontendStable := microserviceGFX{}
+	frontendStable.color = "blue"
+	frontendStable.name = "Frontend"
+	frontendStable.version = "1.0"
+	frontendStable.x = 10
+	frontendStable.y = 200
+	scene.frontendStable = frontendStable
+
+	//Preview frontend
+	frontendPreview := microserviceGFX{}
+	frontendPreview.color = "green"
+	frontendPreview.name = "Frontend"
+	frontendPreview.version = "2.0"
+	frontendPreview.x = 10
+	frontendPreview.y = 600
+	scene.frontendPreview = frontendPreview
 
 	//Production Queue
 	queueStable := queueGFX{}
@@ -114,5 +150,21 @@ func (scene *sceneGFX) renderQueue(queue queueGFX) {
 
 	//queue name is to the right of the disks
 	scene.canvas.Text(x+queueDiskWidth+margin, y+(diskSpacing*numberOfDisks/2), queue.name, svgTextOptions)
+
+}
+
+func (scene *sceneGFX) renderMicroservice(ms microserviceGFX) {
+	x := ms.x
+	y := ms.y
+
+	svgColorOptions := fmt.Sprintf("fill:%s;stroke:black", ms.color)
+	svgIdOptions := fmt.Sprintf("id='%s'", ms.name)
+
+	scene.canvas.Rect(x, y, rolloutWidth, rolloutHeight, svgColorOptions, svgIdOptions)
+
+	//Description on top of the service
+	fontSize := 26
+	svgTextOptions := fmt.Sprintf("font-size:%dpx;fill:black", fontSize)
+	scene.canvas.Text(x, y-margin, ms.name, svgTextOptions)
 
 }
