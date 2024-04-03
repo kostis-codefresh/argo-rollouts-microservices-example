@@ -71,7 +71,10 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	scene.renderMicroservice(scene.frontendStable)
 	scene.renderMicroservice(scene.frontendPreview)
 
-	s.Rect(300, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
+	scene.renderMicroservice(scene.backendStable)
+	scene.renderMicroservice(scene.backendPreview)
+
+	// s.Rect(300, 200, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="frontendPreview"`)
 
 	s.Rect(500, 30, rolloutWidth, rolloutHeight, `fill:lightblue;stroke:black`, `id="workerActive"`)
 
@@ -83,7 +86,7 @@ func (microserviceStatus *MicroserviceStatus) renderLiveDiagram(w http.ResponseW
 	s.Line(250, 260, 280, 250, `stroke-width:3;stroke:black`)
 
 	// s.Text(10, 200, "Front-end", "font-size:30px;fill:black")
-	s.Text(300, 200, "Back-end", "font-size:30px;fill:black")
+	// s.Text(300, 200, "Back-end", "font-size:30px;fill:black")
 	s.Text(500, 30, "Worker", "font-size:30px;fill:black")
 
 	s.End()
@@ -109,6 +112,24 @@ func (scene *sceneGFX) prepareScene(microserviceStatus *MicroserviceStatus) {
 	frontendPreview.x = 10
 	frontendPreview.y = 600
 	scene.frontendPreview = frontendPreview
+
+	//Production backend
+	backendStable := microserviceGFX{}
+	backendStable.color = "blue"
+	backendStable.name = "Backend"
+	backendStable.version = "1.0"
+	backendStable.x = 300
+	backendStable.y = 200
+	scene.backendStable = backendStable
+
+	//Preview backend
+	backendPreview := microserviceGFX{}
+	backendPreview.color = "green"
+	backendPreview.name = "Backend"
+	backendPreview.version = "2.0"
+	backendPreview.x = 300
+	backendPreview.y = 600
+	scene.backendPreview = backendPreview
 
 	//Production Queue
 	queueStable := queueGFX{}
@@ -166,5 +187,8 @@ func (scene *sceneGFX) renderMicroservice(ms microserviceGFX) {
 	fontSize := 26
 	svgTextOptions := fmt.Sprintf("font-size:%dpx;fill:black", fontSize)
 	scene.canvas.Text(x, y-margin, ms.name, svgTextOptions)
+
+	//Version number inside the box
+	scene.canvas.Text(x+(rolloutWidth/2), y+(rolloutHeight/2), ms.version, "text-anchor:middle;font-size:40px;fill:white")
 
 }
